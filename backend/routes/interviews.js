@@ -151,20 +151,76 @@ router.get("/:id/questions", auth, async (req, res) => {
 // @route   POST api/interviews/:id/answers
 // @desc    Submit an answer for a question
 // @access  Private
+// router.post("/:id/answers", auth, async (req, res) => {
+//   try {
+//     // Check if audio file exists
+//     if (!req.files || !req.files.audio) {
+//       return res.status(400).json({ message: "Audio file is required" })
+//     }
+
+//     const { questionId } = req.body
+
+//     if (!questionId) {
+//       return res.status(400).json({ message: "Question ID is required" })
+//     }
+
+//     // Find interview
+//     const interview = await Interview.findOne({
+//       _id: req.params.id,
+//       user: req.user.id,
+//     })
+
+//     if (!interview) {
+//       return res.status(404).json({ message: "Interview not found" })
+//     }
+
+//     // Find question in the interview
+//     const questionIndex = interview.questions.findIndex((q) => q._id.toString() === questionId)
+
+//     if (questionIndex === -1) {
+//       return res.status(404).json({ message: "Question not found" })
+//     }
+
+//     // Process audio file
+//     const audioFile = req.files.audio
+
+//     // Transcribe audio using Gemini
+//     const transcript = await transcribeAudio(audioFile.tempFilePath)
+
+//     // Update question with answer
+//     interview.questions[questionIndex].answer = transcript
+//     interview.questions[questionIndex].answeredAt = new Date()
+
+//     // Check if all questions are answered
+//     const allAnswered = interview.questions.every((q) => q.answer)
+//     if (allAnswered) {
+//       interview.status = "completed"
+//       interview.completedAt = new Date()
+//     }
+
+//     await interview.save()
+
+//     // Return success response
+//     res.json({
+//       message: "Answer recorded successfully",
+//       transcript,
+//     })
+//   } catch (err) {
+//     console.error("Answer recording error:", err.message)
+//     res.status(500).json({ message: "Server error during answer recording" })
+//   }
+// })
+
+// Updated route to accept text answers
 router.post("/:id/answers", auth, async (req, res) => {
   try {
-    // Check if audio file exists
-    if (!req.files || !req.files.audio) {
-      return res.status(400).json({ message: "Audio file is required" })
+    const { questionId, answerText } = req.body
+
+    if (!questionId || !answerText) {
+      return res.status(400).json({ message: "Question ID and answer text are required" })
     }
 
-    const { questionId } = req.body
-
-    if (!questionId) {
-      return res.status(400).json({ message: "Question ID is required" })
-    }
-
-    // Find interview
+    // Find the interview
     const interview = await Interview.findOne({
       _id: req.params.id,
       user: req.user.id,
@@ -174,21 +230,17 @@ router.post("/:id/answers", auth, async (req, res) => {
       return res.status(404).json({ message: "Interview not found" })
     }
 
-    // Find question in the interview
+    // Find the question
     const questionIndex = interview.questions.findIndex((q) => q._id.toString() === questionId)
-
     if (questionIndex === -1) {
       return res.status(404).json({ message: "Question not found" })
     }
 
-    // Process audio file
-    const audioFile = req.files.audio
+    // Analyze answer using Gemini
+    const analysis = await transcribeAudio(answerText)
 
-    // Transcribe audio using Gemini
-    const transcript = await transcribeAudio(audioFile.tempFilePath)
-
-    // Update question with answer
-    interview.questions[questionIndex].answer = transcript
+    // Update question with analyzed answer
+    interview.questions[questionIndex].answer = analysis
     interview.questions[questionIndex].answeredAt = new Date()
 
     // Check if all questions are answered
@@ -200,16 +252,16 @@ router.post("/:id/answers", auth, async (req, res) => {
 
     await interview.save()
 
-    // Return success response
     res.json({
-      message: "Answer recorded successfully",
-      transcript,
+      message: "Answer recorded and analyzed successfully",
+      analysis,
     })
   } catch (err) {
     console.error("Answer recording error:", err.message)
     res.status(500).json({ message: "Server error during answer recording" })
   }
 })
+
 
 // @route   GET api/interviews/:id/report
 // @desc    Get or generate report for an interview

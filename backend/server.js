@@ -27,11 +27,21 @@ app.use(
   }),
 )
 
-// Connect to MongoDB
+// // Connect to MongoDB
+// mongoose
+//   .connect(process.env.MONGODB_URI)
+//   .then(() => console.log("MongoDB connected"))
+//   .catch((err) => console.error("MongoDB connection error:", err))
 mongoose
-  .connect(process.env.MONGODB_URI)
+  .connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 20000, // Wait 20s for server selection
+    socketTimeoutMS: 45000,          // Wait 45s for socket response
+  })
   .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err))
+  .catch((err) => console.error("MongoDB connection error:", err));
+
 
 // Routes
 app.use("/api/auth", authRoutes)

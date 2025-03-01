@@ -8,10 +8,11 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 async function generateInterviewQuestions(resumeText, userInputs) {
   try {
     const prompt = `
-      You are an expert technical interviewer. Generate 10 interview questions (one by one) based on the following resume and user inputs.
+      You are an Indian expert HR and Technical interviewer.
+      Generate 20 interview questions (first 10 for HR Round and next 10 for Technical Round) (one by one) based on the following resume and user inputs.
       The questions should be tailored to the candidate's experience and the target role they're applying for.
       Include a mix of technical questions, behavioral questions, and questions about their experience.
-      
+      ask the questino only one time to get the answer.
       Resume:
       ${resumeText}
       
@@ -61,19 +62,16 @@ async function generateInterviewQuestions(resumeText, userInputs) {
 }
 
 // Transcribe audio to text
-async function transcribeAudio(audioFilePath) {
+async function transcribeAudio(answerText) {
   try {
-    // In a real implementation, you would use Gemini's audio transcription API
-    // For this example, we'll simulate transcription
+    // Send the user's answer text to Gemini for analysis
+    const result = await genAI.analyzeText(answerText)
+    const analysis = result.response.text()
 
-    // Simulate processing time
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Return a placeholder response
-    return "This is a simulated transcription of the audio. In a real implementation, this would be the actual transcribed text from the user's audio recording."
+    return analysis
   } catch (error) {
-    console.error("Error transcribing audio:", error)
-    return "Error transcribing audio. Please try again."
+    console.error("Error analyzing answer with Gemini:", error)
+    return "Error analyzing answer. Please try again."
   }
 }
 
@@ -220,4 +218,6 @@ module.exports = {
   generateInterviewReport,
   generateImprovedAnswers,
 }
+
+
 
