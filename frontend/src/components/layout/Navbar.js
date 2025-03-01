@@ -12,37 +12,37 @@ const Navbar = () => {
   }
 
   const authLinks = (
-    <ul className="navbar-nav">
-      <li className="nav-item">
-        <Link to="/dashboard" className="nav-link">
+    <ul className="flex items-center space-x-4">
+      <li>
+        <Link to="/dashboard" className="text-gray-600 hover:text-gray-900">
           Dashboard
         </Link>
       </li>
-      <li className="nav-item">
-        <Link to="/new-interview" className="nav-link">
+      <li>
+        <Link to="/new-interview" className="text-gray-600 hover:text-gray-900">
           New Interview
         </Link>
       </li>
-      <li className="nav-item">
-        <button onClick={onLogout} className="btn btn-link nav-link">
+      <li>
+        <button onClick={onLogout} className="text-gray-600 hover:text-gray-900">
           Logout
         </button>
       </li>
-      <li className="nav-item user-greeting">
+      <li className="text-gray-600">
         <span>Hello, {user?.name}</span>
       </li>
     </ul>
   )
 
   const guestLinks = (
-    <ul className="navbar-nav">
-      <li className="nav-item">
-        <Link to="/login" className="nav-link">
+    <ul className="flex items-center space-x-4">
+      <li>
+        <Link to="/login" className="text-gray-600 hover:text-gray-900">
           Login
         </Link>
       </li>
-      <li className="nav-item">
-        <Link to="/register" className="nav-link">
+      <li>
+        <Link to="/register" className="text-gray-600 hover:text-gray-900">
           Register
         </Link>
       </li>
@@ -50,9 +50,9 @@ const Navbar = () => {
   )
 
   return (
-    <nav className="navbar">
-      <div className="container">
-        <Link to="/" className="navbar-brand">
+    <nav className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+        <Link to="/" className="text-2xl font-bold text-gray-800">
           AI Interviewer
         </Link>
         <div className="navbar-menu">{isAuthenticated ? authLinks : guestLinks}</div>
@@ -62,4 +62,3 @@ const Navbar = () => {
 }
 
 export default Navbar
-

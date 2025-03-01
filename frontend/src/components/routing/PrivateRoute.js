@@ -8,11 +8,14 @@ const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useContext(AuthContext)
 
   if (loading) {
-    return <div className="loading-container">Loading...</div>
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-lg font-semibold text-gray-700">Loading...</div>
+      </div>
+    )
   }
 
   return isAuthenticated ? children : <Navigate to="/login" />
 }
 
 export default PrivateRoute
-

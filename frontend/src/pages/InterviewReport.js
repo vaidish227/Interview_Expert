@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import axios from "axios"
@@ -33,66 +31,55 @@ const InterviewReport = () => {
   }, [interviewId])
 
   const getScoreColor = (score) => {
-    if (score >= 80) return "score-high"
-    if (score >= 60) return "score-medium"
-    return "score-low"
-  }
-
-  const getScoreIcon = (score) => {
-    if (score >= 80) return <i className="fas fa-check-circle score-icon-high"></i>
-    if (score >= 60) return <i className="fas fa-exclamation-triangle score-icon-medium"></i>
-    return <i className="fas fa-times-circle score-icon-low"></i>
+    if (score >= 80) return "text-green-500"
+    if (score >= 60) return "text-yellow-500"
+    return "text-red-500"
   }
 
   if (loading) {
     return (
-      <div className="interview-report-page">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <Navbar />
-        <div className="loading-container">Generating your interview report...</div>
+        <div className="text-lg font-semibold">Generating your interview report...</div>
       </div>
     )
   }
 
   if (error || !report) {
     return (
-      <div className="interview-report-page">
+      <div className="min-h-screen bg-gray-100">
         <Navbar />
-        <div className="container">
+        <div className="container mx-auto p-6">
           <Alert type="error" message={error || "Failed to load report"} />
-          <button className="btn btn-primary mt-4" onClick={() => navigate("/dashboard")}>
-            Return to Dashboard
-          </button>
+          <button className="btn btn-primary mt-4" onClick={() => navigate("/dashboard")}>Return to Dashboard</button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="interview-report-page">
+    <div className="min-h-screen bg-gray-100">
       <Navbar />
-
-      <div className="container">
-        <div className="report-header">
-          <h1>Interview Report</h1>
+      <div className="container mx-auto p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Interview Report</h1>
           <button className="btn btn-outline">
             <i className="fas fa-download"></i> Download PDF
           </button>
         </div>
 
-        <div className="score-cards">
-          <div className="score-card">
-            <h3>Overall Score</h3>
-            <p className={`score-value ${getScoreColor(report.overallScore)}`}>{report.overallScore}%</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className="p-4 bg-white shadow rounded-lg">
+            <h3 className="text-lg font-semibold">Overall Score</h3>
+            <p className={`text-3xl font-bold ${getScoreColor(report.overallScore)}`}>{report.overallScore}%</p>
           </div>
-
-          <div className="score-card">
-            <h3>Answer Accuracy</h3>
-            <p className={`score-value ${getScoreColor(report.accuracy)}`}>{report.accuracy}%</p>
+          <div className="p-4 bg-white shadow rounded-lg">
+            <h3 className="text-lg font-semibold">Answer Accuracy</h3>
+            <p className={`text-3xl font-bold ${getScoreColor(report.accuracy)}`}>{report.accuracy}%</p>
           </div>
-
-          <div className="score-card">
-            <h3>Areas for Improvement</h3>
-            <p className="score-value">{report.areasOfImprovement.length}</p>
+          <div className="p-4 bg-white shadow rounded-lg">
+            <h3 className="text-lg font-semibold">Areas for Improvement</h3>
+            <p className="text-3xl font-bold">{report.areasOfImprovement.length}</p>
           </div>
         </div>
 
@@ -107,116 +94,35 @@ const InterviewReport = () => {
           ]}
         >
           {activeTab === "summary" && (
-            <div className="tab-content">
-              <div className="improvement-section">
-                <h2>Areas of Improvement</h2>
-                <ul className="improvement-list">
-                  {report.areasOfImprovement.map((area, index) => (
-                    <li key={index}>{area}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="improvement-section">
-                <h2>Grammatical Improvements</h2>
-                <ul className="improvement-list">
-                  {report.grammaticalImprovements.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="improvement-section">
-                <h2>Technical Improvements</h2>
-                <ul className="improvement-list">
-                  {report.technicalImprovements.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              </div>
+            <div className="bg-white p-6 shadow rounded-lg">
+              <h2 className="text-2xl font-semibold mb-4">Areas of Improvement</h2>
+              <ul className="list-disc pl-6">
+                {report.areasOfImprovement.map((area, index) => (
+                  <li key={index}>{area}</li>
+                ))}
+              </ul>
             </div>
           )}
 
           {activeTab === "qa" && (
-            <div className="tab-content">
-              <div className="qa-list">
-                {report.questionAnswers.map((qa, index) => (
-                  <div key={index} className="qa-card">
-                    <div className="qa-header">
-                      <h3>Question {index + 1}</h3>
-                      <div className="qa-score">
-                        {getScoreIcon(qa.score)}
-                        <span className={getScoreColor(qa.score)}>{qa.score}%</span>
-                      </div>
-                    </div>
-                    <p className="qa-question">{qa.question}</p>
-                    <div className="qa-answer">
-                      <h4>Your Answer:</h4>
-                      <p>{qa.answer}</p>
-                    </div>
-                    <div className="qa-feedback">
-                      <h4>Feedback:</h4>
-                      <p>{qa.feedback}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeTab === "improvements" && (
-            <div className="tab-content">
-              <div className="improvement-card">
-                <h2>Technical Skills</h2>
-                <p className="improvement-subtitle">Areas where you can improve your technical knowledge</p>
-                <ul className="improvement-list">
-                  {report.technicalImprovements.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="improvement-card">
-                <h2>Communication Skills</h2>
-                <p className="improvement-subtitle">Ways to improve your communication and presentation</p>
-                <ul className="improvement-list">
-                  {report.grammaticalImprovements.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "corrected" && (
-            <div className="tab-content">
-              <div className="corrected-list">
-                {report.improvedAnswers.map((item, index) => (
-                  <div key={index} className="corrected-card">
-                    <h3>Question {index + 1}</h3>
-                    <p className="corrected-question">{item.question}</p>
-                    <div className="corrected-original">
-                      <h4>Your Original Answer:</h4>
-                      <p>{item.originalAnswer}</p>
-                    </div>
-                    <div className="corrected-improved">
-                      <h4>Improved Answer:</h4>
-                      <p>{item.improvedAnswer}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="space-y-6">
+              {report.questionAnswers.map((qa, index) => (
+                <div key={index} className="bg-white p-6 shadow rounded-lg">
+                  <h3 className="text-xl font-semibold mb-2">Question {index + 1}</h3>
+                  <p className="text-gray-700 mb-4">{qa.question}</p>
+                  <h4 className="font-semibold">Your Answer:</h4>
+                  <p className="text-gray-600 mb-4">{qa.answer}</p>
+                  <h4 className="font-semibold">Feedback:</h4>
+                  <p className="text-gray-600">{qa.feedback}</p>
+                </div>
+              ))}
             </div>
           )}
         </Tabs>
 
-        <div className="report-actions">
-          <button className="btn btn-outline" onClick={() => navigate("/dashboard")}>
-            Back to Dashboard
-          </button>
-          <button className="btn btn-primary" onClick={() => navigate("/new-interview")}>
-            Start New Interview
-          </button>
+        <div className="flex justify-between mt-6">
+          <button className="btn btn-outline" onClick={() => navigate("/dashboard")}>Back to Dashboard</button>
+          <button className="btn btn-primary" onClick={() => navigate("/new-interview")}>Start New Interview</button>
         </div>
       </div>
     </div>
@@ -225,3 +131,4 @@ const InterviewReport = () => {
 
 export default InterviewReport
 
+// Let me know if you want me to tweak anything else! 🚀

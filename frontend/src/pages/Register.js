@@ -22,12 +22,10 @@ const Register = () => {
   const { name, email, password, confirmPassword } = formData
 
   useEffect(() => {
-    // If already authenticated, redirect to dashboard
     if (isAuthenticated) {
       navigate("/dashboard")
     }
 
-    // Set form error from context if exists
     if (error) {
       setFormError(error)
       clearError()
@@ -42,7 +40,6 @@ const Register = () => {
     e.preventDefault()
     setFormError("")
 
-    // Validate form
     if (!name || !email || !password || !confirmPassword) {
       setFormError("All fields are required")
       return
@@ -59,11 +56,7 @@ const Register = () => {
     }
 
     setLoading(true)
-    const result = await register({
-      name,
-      email,
-      password,
-    })
+    const result = await register({ name, email, password })
     setLoading(false)
 
     if (result.success) {
@@ -74,68 +67,69 @@ const Register = () => {
   }
 
   return (
-    <div className="register-page">
+    <div className="min-h-screen bg-gray-100 flex flex-col">
       <Navbar />
 
-      <div className="auth-container">
-        <div className="auth-card">
-          <h1>Create an Account</h1>
-          <p className="auth-subtitle">Enter your information to create an account</p>
+      <div className="flex-grow flex items-center justify-center">
+        <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full">
+          <h1 className="text-2xl font-bold mb-4 text-center">Create an Account</h1>
+          <p className="text-gray-600 mb-6 text-center">Enter your information to create an account</p>
 
           {formError && <Alert type="error" message={formError} />}
 
-          <form onSubmit={onSubmit}>
-            <div className="form-group">
-              <label htmlFor="name">Name</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={name}
-                onChange={onChange}
-                placeholder="John Doe"
-                required
-              />
-            </div>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <input
+              type="text"
+              name="name"
+              value={name}
+              onChange={onChange}
+              placeholder="Name"
+              className="w-full p-3 border rounded-lg"
+              required
+            />
 
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={email}
-                onChange={onChange}
-                placeholder="john@example.com"
-                required
-              />
-            </div>
+            <input
+              type="email"
+              name="email"
+              value={email}
+              onChange={onChange}
+              placeholder="Email"
+              className="w-full p-3 border rounded-lg"
+              required
+            />
 
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <input type="password" id="password" name="password" value={password} onChange={onChange} required />
-            </div>
+            <input
+              type="password"
+              name="password"
+              value={password}
+              onChange={onChange}
+              placeholder="Password"
+              className="w-full p-3 border rounded-lg"
+              required
+            />
 
-            <div className="form-group">
-              <label htmlFor="confirmPassword">Confirm Password</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={confirmPassword}
-                onChange={onChange}
-                required
-              />
-            </div>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={confirmPassword}
+              onChange={onChange}
+              placeholder="Confirm Password"
+              className="w-full p-3 border rounded-lg"
+              required
+            />
 
-            <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+            <button
+              type="submit"
+              className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition disabled:bg-gray-400"
+              disabled={loading}
+            >
               {loading ? "Creating account..." : "Register"}
             </button>
           </form>
 
-          <p className="auth-footer">
-            Already have an account?{" "}
-            <Link to="/login" className="auth-link">
+          <p className="mt-6 text-center text-gray-600">
+            Already have an account? {" "}
+            <Link to="/login" className="text-blue-500 hover:underline">
               Login
             </Link>
           </p>
@@ -146,4 +140,3 @@ const Register = () => {
 }
 
 export default Register
-

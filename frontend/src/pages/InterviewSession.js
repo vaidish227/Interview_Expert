@@ -21,10 +21,9 @@ const InterviewSession = () => {
   const [transcript, setTranscript] = useState("")
   const [progress, setProgress] = useState(0)
 
-  const mediaRecorderRef = useRef(null)
-  const audioChunksRef = useRef([])
+  const utteranceRef = useRef(null)
+  const recognitionRef = useRef(null)
 
-  // Fetch interview questions
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
@@ -41,178 +40,155 @@ const InterviewSession = () => {
     fetchQuestions()
   }, [interviewId])
 
-  // Calculate progress
   useEffect(() => {
     if (questions.length > 0) {
       setProgress(((currentQuestionIndex + 1) / questions.length) * 100)
     }
   }, [currentQuestionIndex, questions])
 
-  // Speech synthesis for asking questions
   const speakQuestion = useCallback((text) => {
     if ("speechSynthesis" in window) {
       setIsSpeaking(true)
-
       const utterance = new SpeechSynthesisUtterance(text)
-      utterance.onend = () => {
-        setIsSpeaking(false)
-      }
-
+      utteranceRef.current = utterance
+      utterance.onend = () => setIsSpeaking(false)
       window.speechSynthesis.speak(utterance)
     } else {
       setError("Speech synthesis is not supported in your browser")
     }
   }, [])
 
-  // Speak current question when it changes
+  const stopSpeaking = () => {
+    if (utteranceRef.current && isSpeaking) {
+      window.speechSynthesis.cancel()
+      setIsSpeaking(false)
+    }
+  }
+
   useEffect(() => {
     if (questions.length > 0 && currentQuestionIndex < questions.length) {
       speakQuestion(questions[currentQuestionIndex].text)
     }
   }, [currentQuestionIndex, questions, speakQuestion])
 
-  // Start recording user's answer
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+  const startRecording = () => {
+    if ("webkitSpeechRecognition" in window) {
+      const recognition = new window.webkitSpeechRecognition()
+      recognition.continuous = true
+      recognition.interimResults = true
 
-      const mediaRecorder = new MediaRecorder(stream)
-      mediaRecorderRef.current = mediaRecorder
-      audioChunksRef.current = []
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data)
+      recognition.onresult = (event) => {
+        let interimTranscript = ""
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            setTranscript((prev) => prev + event.results[i][0].transcript + " ")
+          } else {
+            interimTranscript += event.results[i][0].transcript
+          }
         }
       }
 
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" })
-
-        // Convert audio to text using API
-        const formData = new FormData()
-        formData.append("audio", audioBlob)
-        formData.append("questionId", questions[currentQuestionIndex].id)
-
-        try {
-          const res = await axios.post(`/api/interviews/${interviewId}/answers`, formData, {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          })
-
-          setTranscript(res.data.transcript)
-
-          // Move to next question after a short delay
-          setTimeout(() => {
-            if (currentQuestionIndex < questions.length - 1) {
-              setCurrentQuestionIndex((prev) => prev + 1)
-              setTranscript("")
-            } else {
-              // Interview completed
-              navigate(`/interview/${interviewId}/report`)
-            }
-          }, 2000)
-        } catch (err) {
-          setError(err.response?.data?.message || "Failed to process your answer")
-        }
-      }
-
-      mediaRecorder.start()
+      recognition.start()
       setIsRecording(true)
-    } catch (err) {
-      setError("Microphone access denied or not available")
+      recognitionRef.current = recognition
+    } else {
+      setError("Speech recognition is not supported in your browser")
     }
   }
 
-  // Stop recording
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop()
+    if (recognitionRef.current && isRecording) {
+      recognitionRef.current.stop()
       setIsRecording(false)
+    }
+  }
 
-      // Stop all audio tracks
-      if (mediaRecorderRef.current.stream) {
-        mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop())
+  const clearText = () => {
+    setTranscript("")
+  }
+
+  const sendAnswer = async () => {
+    try {
+      await axios.post(`/api/interviews/${interviewId}/answers`, {
+        questionId: questions[currentQuestionIndex].id,
+        answerText: transcript,
+      })
+
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex((prev) => prev + 1)
+        setTranscript("")
+      } else {
+        navigate(`/interview/${interviewId}/report`)
       }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to submit your answer")
     }
   }
 
   if (loading) {
     return (
-      <div className="interview-session-page">
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <Navbar />
-        <div className="loading-container">Loading interview questions...</div>
+        <div className="text-lg font-semibold">Loading interview questions...</div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="interview-session-page">
+      <div className="container mx-auto p-4">
         <Navbar />
-        <div className="container">
-          <Alert type="error" message={error} />
-          <button className="btn btn-primary mt-4" onClick={() => navigate("/dashboard")}>
-            Return to Dashboard
-          </button>
-        </div>
+        <Alert type="error" message={error} />
+        <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mt-4" onClick={() => navigate("/dashboard")}>
+          Return to Dashboard
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="interview-session-page">
+    <div className="container mx-auto p-6">
       <Navbar />
-
-      <div className="container">
-        <div className="interview-header">
-          <h1>Interview Session</h1>
+      <div className="space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">Interview Session</h1>
           <ProgressBar value={progress} />
-          <p className="question-counter">
+          <p className="text-sm text-gray-600">
             Question {currentQuestionIndex + 1} of {questions.length}
           </p>
         </div>
 
-        <div className="interview-card">
-          <div className="speaking-indicator">
-            {isSpeaking ? (
-              <div className="speaking-active">
-                <i className="fas fa-volume-up"></i>
-                <span>AI is speaking...</span>
-              </div>
+        <div className="bg-white p-6 shadow-lg rounded-lg">
+          <div className="text-xl font-semibold mb-4">
+            {questions[currentQuestionIndex]?.text || "No question available"}
+          </div>
+          <textarea
+            className="w-full p-3 border rounded-lg"
+            rows="4"
+            value={transcript}
+            placeholder="Start speaking to see your answer..."
+            readOnly
+          ></textarea>
+          <div className="flex gap-4 mt-4">
+            <button className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={clearText}>
+              Clear Text
+            </button>
+            {isRecording ? (
+              <button className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600" onClick={stopRecording}>
+                Stop Recording
+              </button>
             ) : (
-              <div className="speaking-inactive">
-                <i className="fas fa-volume-mute"></i>
-                <span>AI is silent</span>
-              </div>
+              <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" onClick={startRecording} disabled={isSpeaking}>
+                Start Recording
+              </button>
             )}
-          </div>
-
-          <div className="question-container">
-            <h2 className="question-text">{questions[currentQuestionIndex]?.text || "No question available"}</h2>
-          </div>
-
-          {transcript && (
-            <div className="transcript-container">
-              <h3>Your answer:</h3>
-              <p>{transcript}</p>
-            </div>
-          )}
-        </div>
-
-        <div className="recording-controls">
-          {isRecording ? (
-            <button className="btn btn-danger btn-lg recording-btn" onClick={stopRecording}>
-              <i className="fas fa-microphone-slash"></i>
-              Stop Recording
+            <button className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600" onClick={sendAnswer} disabled={!transcript}>
+              Send Answer
             </button>
-          ) : (
-            <button className="btn btn-primary btn-lg recording-btn" onClick={startRecording} disabled={isSpeaking}>
-              <i className="fas fa-microphone"></i>
-              Start Recording
+            <button className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600" onClick={stopSpeaking}>
+              Stop AI
             </button>
-          )}
+          </div>
         </div>
       </div>
     </div>
